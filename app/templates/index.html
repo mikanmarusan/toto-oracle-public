@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>toto予想</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .subtitle {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .toto-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #2196F3;
+        }
+        .matches-grid {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .match-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+        .match-card:hover {
+            transform: translateY(-2px);
+        }
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .match-number {
+            background: #2196F3;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .match-teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .team {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .vs {
+            color: #666;
+            font-weight: bold;
+        }
+        .prediction {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .prediction.win {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        .prediction.draw {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+        .prediction.lose {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .btn {
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.4);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 5px solid #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚽ toto予想</h1>
+            <p class="subtitle">Jリーグtoto13試合の勝敗予想</p>
+        </div>
+        
+        <div class="content">
+            <div class="controls">
+                <button class="btn" onclick="runBatch()">最新予想を取得</button>
+            </div>
+            
+            <div class="loading" id="loading">
+                <p>予想計算中...</p>
+            </div>
+            
+            <div id="error-message" class="error" style="display: none;"></div>
+            
+            <div id="toto-content" style="display: none;">
+                <div class="toto-info" id="toto-info">
+                    <!-- toto情報がここに表示されます -->
+                </div>
+                
+                <div class="matches-grid" id="matches-grid">
+                    <!-- 試合予想がここに表示されます -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function runBatch() {
+            const loading = document.getElementById('loading');
+            const errorMessage = document.getElementById('error-message');
+            const totoContent = document.getElementById('toto-content');
+            
+            loading.style.display = 'block';
+            errorMessage.style.display = 'none';
+            totoContent.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/run-batch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayPredictions(data);
+                } else {
+                    showError(data.error || 'エラーが発生しました');
+                }
+            } catch (error) {
+                showError('ネットワークエラーが発生しました: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        function displayPredictions(data) {
+            const totoInfo = document.getElementById('toto-info');
+            const matchesGrid = document.getElementById('matches-grid');
+            const totoContent = document.getElementById('toto-content');
+            
+            // toto情報表示
+            totoInfo.innerHTML = `
+                <h3>第${data.toto_info.round || 'xxx'}回 toto</h3>
+                <p>開催日: ${data.toto_info.date || '未定'}</p>
+                <p>締切: ${data.toto_info.deadline || '未定'}</p>
+            `;
+            
+            // 試合予想表示
+            matchesGrid.innerHTML = '';
+            if (data.predictions && data.predictions.length > 0) {
+                data.predictions.forEach((prediction, index) => {
+                    const matchCard = createMatchCard(index + 1, prediction);
+                    matchesGrid.appendChild(matchCard);
+                });
+            } else {
+                matchesGrid.innerHTML = '<p>予想データがありません</p>';
+            }
+            
+            totoContent.style.display = 'block';
+        }
+        
+        function createMatchCard(matchNumber, prediction) {
+            const card = document.createElement('div');
+            card.className = 'match-card';
+            
+            const predictionClass = prediction.prediction === '1' ? 'win' : 
+                                  prediction.prediction === '0' ? 'draw' : 'lose';
+            const predictionText = prediction.prediction === '1' ? 'ホーム勝利' : 
+                                 prediction.prediction === '0' ? '引き分け' : 'アウェイ勝利';
+            
+            card.innerHTML = `
+                <div class="match-header">
+                    <span class="match-number">${matchNumber}</span>
+                </div>
+                <div class="match-teams">
+                    <span class="team">${prediction.home_team || 'ホーム'}</span>
+                    <span class="vs">vs</span>
+                    <span class="team">${prediction.away_team || 'アウェイ'}</span>
+                </div>
+                <div class="prediction ${predictionClass}">
+                    ${predictionText} (${prediction.prediction})
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        function showError(message) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

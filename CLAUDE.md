@@ -20,6 +20,7 @@ Jリーグを対象としたサッカーくじtoto（13試合の勝敗予想）�
 ### インフラ
 - **デプロイ環境**: ローカル環境（Mac）
 - **コンテナ**: Docker + docker-compose
+- **ポート番号**: 5050（MacのAirPlayとの競合を避けるため、Flask標準の5000番ではなく5050番を使用）
 - **データ保存**: 不要（メモリ上で処理）
 
 ## 機能要件
@@ -97,7 +98,9 @@ docker-compose up
 ```
 
 ### バッチ処理手動実行
-- APIエンドポイント経由での実行
+- **APIエンドポイント**: `POST http://localhost:5050/api/run-batch`
+- **Web画面から**: http://localhost:5050 の「最新予想を取得」ボタン
+- **curlコマンド**: `curl -X POST http://localhost:5050/api/run-batch`
 
 ## 将来的な拡張予定
 - AWSでの本格運用（現時点では実装不要）
@@ -136,3 +139,19 @@ docker-compose up
 - データの永続化は不要
 - ローカル環境での動作が前提
 - Dockerコンテナでの実行必須
+- ポート5050での動作（MacのAirPlay機能との競合回避）
+
+## 開発ルール・指示事項
+
+### ポート設定
+- **使用ポート**: 5050番
+- **理由**: MacのAirPlay機能がFlask標準の5000番ポートと競合するため
+- **設定箇所**:
+  - `docker-compose.yml`: ports設定とCMD設定
+  - `Dockerfile`: EXPOSE設定とCMD設定
+  - `app/main.py`: Flask起動時のport設定
+
+### UI設計
+- **タイトル表記**: 「toto予想」（「オラクル」は使用しない）
+- **デザイン**: モダンでスポーティなデザイン
+- **レスポンシブ対応**: モバイル・デスクトップ両対応
