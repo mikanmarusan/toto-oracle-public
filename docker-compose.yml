@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  toto-oracle:
+    build: .
+    ports:
+      - "5050:5050"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app.main:app
+    volumes:
+      - .:/app
+    command: ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5050"]
